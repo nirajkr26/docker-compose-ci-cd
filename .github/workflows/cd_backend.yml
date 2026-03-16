@@ -1,0 +1,32 @@
+name : Deploy backend
+on:
+  push:
+    branches: [ main ]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      
+      - name: Docker login
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+      
+      - name: Build and push
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: ./docker/Dockerfile.backend
+          push: true
+          tags: nirajkr26/ci_cd_learn_backend:${{ github.sha }}
+      
+      - name: Deploy to VM
+        run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" &> ~/ssh_key
+          chmod 700 /home/runner/ssh_key
+          ssh -o StrictHostKeyChecking=no -i ~/ssh_key root@13.51.255.55 -t "docker stop cicd_backend && docker run --name cicd_backend -d -p 8080:8080 nirajkr26/ci_cd_learn_backend:${{ github.sha }}"
+
+        
