@@ -1,10 +1,13 @@
-name : Deploy frontend
+name: Deploy frontend
+
 on:
   push:
     branches: [ main ]
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -20,17 +23,24 @@ jobs:
         with:
           context: .
           file: ./docker/Dockerfile.frontend
-          build-args:
-            - DATABASE_URL=${{ secrets.DATABASE_URL }
+          build-args: |
+            DATABASE_URL=${{ secrets.DATABASE_URL }}
           push: true
           tags: nirajkr26/ci_cd_learn_frontend:${{ github.sha }}
 
       - name: Deploy to VM
         run: |
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" &> ~/ssh_key
-          chmod 700 /home/runner/ssh_key
-          ssh -o StrictHostKeyChecking=no -i ~/ssh_key ubuntu@13.48.248.23 -t "docker stop cicd_frontend && docker run --name cicd_frontend -d -p 8080:8080 nirajkr26/ci_cd_learn_frontend:${{ github.sha }}"
-      
-      
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/ssh_key
+          chmod 600 ~/ssh_key
 
-        
+          ssh -o StrictHostKeyChecking=no -i ~/ssh_key ubuntu@13.48.248.23 << 'EOF'
+            docker stop cicd_frontend || true
+            docker rm cicd_frontend || true
+            docker pull nirajkr26/ci_cd_learn_frontend:${{ github.sha }}
+
+            docker run -d \
+              --name cicd_frontend \
+              -p 3000:3000 \
+              --restart unless-stopped \
+              nirajkr26/ci_cd_learn_frontend:${{ github.sha }}
+          EOF
