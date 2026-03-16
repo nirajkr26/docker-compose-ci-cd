@@ -29,7 +29,7 @@ jobs:
         run: |
           echo "${{ secrets.SSH_PRIVATE_KEY }}" &> ~/ssh_key
           chmod 700 /home/runner/ssh_key
-          ssh -o StrictHostKeyChecking=no -i ~/ssh_key root@13.48.248.23 -t "docker stop cicd_frontend && docker run --name cicd_frontend -d -p 8080:8080 nirajkr26/ci_cd_learn_frontend:${{ github.sha }}"
+          ssh -o StrictHostKeyChecking=no -i ~/ssh_key ubuntu@13.48.248.23 -t "docker stop cicd_frontend && docker run --name cicd_frontend -d -p 8080:8080 nirajkr26/ci_cd_learn_frontend:${{ github.sha }}"
       
       
 
